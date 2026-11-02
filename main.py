@@ -2,10 +2,13 @@ import json
 import math
 import os
 from json import JSONDecodeError
-def printMenu():
-    print("""========================================
+
+
+def print_menu():
+    cizgi = "=" * 40
+    print(f"""{cizgi}
      DEPO VE STOK YÖNETİM SİSTEMİ
-========================================
+{cizgi}
 1. Tüm Ürünleri Listele
 2. Yeni Ürün Ekle
 3. Ürün Ara (İsme Göre)
@@ -14,30 +17,37 @@ def printMenu():
 6. Kritik Stok Raporu (< 5)
 7. Toplam Envanter Değeri
 0. Kaydet ve Çıkış
-========================================""")
+{cizgi}""")
+
 
 def load():
     try:
-        with open("envanter.json",encoding="utf_8") as file:
+        with open("envanter.json", encoding="utf_8") as file:
             items = json.load(file)
             return items
     except FileNotFoundError:
-        with open("envanter.json", "w",encoding="utf_8") as file:
+        with open("envanter.json", "w", encoding="utf_8") as file:
             file.write("[]")
             return []
     except JSONDecodeError:
         os.replace("envanter.json", "envanter_bozuk.json")
-        print("UYARI: envanter.json bozuktu, envanter_bozuk.json olarak yedeklendi.")
+        print("UYARI: envanter.json bozuktu, "
+              "envanter_bozuk.json olarak yedeklendi.")
+        with open("envanter.json", "w", encoding="utf_8") as file:
+            file.write("[]")
         return []
 
-def yeniID(item):
+
+def yeni_id(item):
     if not item:
         return 1
 
     return max(urun["id"] for urun in item) + 1
 
+
 def tr_lower(s):
     return s.replace("I", "ı").replace("İ", "i").lower()
+
 
 def tr_capitalize(s):
     if not s:
@@ -45,28 +55,34 @@ def tr_capitalize(s):
     ilk = {"i": "İ", "ı": "I"}.get(s[0], s[0].upper())
     return ilk + tr_lower(s[1:])
 
-def printItems(item):
+
+def print_items(item):
     if not item:
         print("Kayıtlı ürün bulunamadı")
         return
 
-    print(f"{'ID':<4} {'Ad':<20} {'Kategori':<15} {'Stok':>6} {'Fiyat':>10} {'Satır Değeri':>14}")
+    print(f"{'ID':<4} {'Ad':<20} "
+          f"{'Kategori':<15} {'Stok':>6} "
+          f"{'Fiyat':>10} {'Satır Değeri':>14}")
     print("-" * 74)
     for urun in item:
         satir_degeri = urun["stok"] * urun["fiyat"]
-        print(f"{urun['id']:<4} {urun['ad']:<20} {urun['kategori']:<15} "
-              f"{urun['stok']:>6} {urun['fiyat']:>10.2f} {satir_degeri:>14.2f}")
+        print(f"{urun['id']:<4} {urun['ad']:<20} "
+              f"{urun['kategori']:<15} "
+              f"{urun['stok']:>6} {urun['fiyat']:>10.2f} "
+              f"{satir_degeri:>14.2f}")
 
     print("\n")
 
-def addItem(item):
+
+def add_item(item):
     while True:
         try:
             ad = tr_capitalize(input("Ürün adı giriniz: ").strip())
             if ad == "":
                 print("Lütfen ad giriniz.")
                 continue
-            kategori = str(input("Kategori giriniz: "))
+            kategori = input("Kategori giriniz: ").strip()
             stok = int(input("Stok giriniz: "))
             fiyat = float(input("Fiyat giriniz: ").replace(",", "."))
 
@@ -74,48 +90,48 @@ def addItem(item):
                 print("Lütfen sıfır veya sıfırdan büyük bir değer giriniz.")
                 continue
             if not math.isfinite(fiyat) or fiyat <= 0:
-                print("Lütfen sıfırdan büyük bir değer giriniz.")
+                print("Lütfen sıfırdan "
+                      "büyük bir değer giriniz.")
                 continue
 
         except ValueError:
-            print("İşlemde hata meydana geldi.Lütfen geçerli değerler giriniz.")
+            print("İşlemde hata meydana geldi."
+                  " Lütfen geçerli değerler giriniz.")
             continue
 
-        list = {
-                "id": yeniID(item),
+        yeni_urun = {
+                "id": yeni_id(item),
                 "ad": ad,
                 "kategori": kategori,
                 "stok": stok,
                 "fiyat": fiyat
             }
-        item.append(list)
+        item.append(yeni_urun)
         print("Başarıyla Eklendi.")
         save(item)
         break
 
-def searchItem(item):
 
-        ad = tr_lower(input("Lütfen aradığınız ürünün adını yazınız: ").strip())
-        if ad == "":
-            return
-        bul = False
-        for list in item:
-            if ad in tr_lower(list["ad"]):
-                bul = True
-                print(list)
-                print("Ürün bulundu.")
+def search_item(item):
+    ad = tr_lower(input("Lütfen aradığınız ürünün adını yazınız: ").strip())
+    if ad == "":
+        return
+    bulunanlar = [urun for urun in item if ad in tr_lower(urun["ad"])]
+    if bulunanlar:
+        print_items(bulunanlar)
+    else:
+        print("Ürün bulunamadı.")
 
-        if not bul:
-            print("Ürün bulunamadı.")
 
-def updateStockAndPrice(item):
-    tempList = None
+def update_stock_and_price(item):
+    secilen_urun = None
     while True:
         try:
-            id = int(input("Lütfen değiştirmek istediğiniz ürünün id numarasını giriniz: "))
-            for list in item:
-                if list["id"] == id:
-                    tempList = list
+            urun_id = int(input("Lütfen değiştirmek istediğiniz "
+                                "ürünün id numarasını giriniz: "))
+            for urun in item:
+                if urun["id"] == urun_id:
+                    secilen_urun = urun
                     print("Bulundu")
                     break
 
@@ -123,102 +139,108 @@ def updateStockAndPrice(item):
             print("Lütfen bir sayı giriniz.")
             continue
 
-        if tempList is None:
+        if secilen_urun is None:
             print("Bulunamadı.")
             return
 
         break
 
-    print(tempList)
+    print_items([secilen_urun])
     while True:
         try:
-            yeniStok = int(input("Lütfen yeni stoku giriniz: "))
-            yeniFiyat = float(input("Lütfen yeni fiyat giriniz: ").replace(",", "."))
+            yeni_stok = int(input("Lütfen yeni stoku giriniz: "))
+            yeni_fiyat = float(input("Lütfen yeni "
+                                     "fiyat giriniz: ").replace(",", "."))
 
-            if yeniStok >= 0 and math.isfinite(yeniFiyat) and yeniFiyat > 0:
+            if (yeni_stok >= 0 and math.isfinite(yeni_fiyat)
+                    and yeni_fiyat > 0):
                 break
             else:
-                print("Stok sıfır veya sıfırdan büyük, fiyat sıfırdan büyük olmak zorunda.")
+                print("Stok sıfır veya sıfırdan büyük, "
+                      "fiyat sıfırdan büyük olmak zorunda.")
         except ValueError:
             print("Lütfen değer giriniz.")
             continue
 
-    tempList["stok"] = yeniStok
-    tempList["fiyat"] = yeniFiyat
+    secilen_urun["stok"] = yeni_stok
+    secilen_urun["fiyat"] = yeni_fiyat
     print("Başarıyla güncellendi.")
 
     save(item)
 
 
-def deleteItem(item):
+def delete_item(item):
     if not item:
-        print("Listede herhangi bir ürün yok.")
+        print("Listede herhangi "
+              "bir ürün yok.")
         return
     try:
-        id = int(input("Lütfen kaldırmak istediğiniz ürünün id numarasını giriniz: "))
+        urun_id = int(input("Lütfen kaldırmak istediğiniz ürünün "
+                            "id numarasını giriniz: "))
     except ValueError:
         print("Lütfen numara değeri giriniz.")
         return
-    for list in item:
-        if list["id"] == id:
-            item.remove(list)
+    for urun in item:
+        if urun["id"] == urun_id:
+            item.remove(urun)
             print("Başarıyla kaldırıldı")
             save(item)
             return
     print("Ürün bulunamadı.")
 
-def criticalStockReport(item):
-    report_list = []
-    for list in item:
-        if list["stok"] < 5:
-            report_list.append(list)
 
-    return report_list
+def critical_stock_report(item):
+    return [urun for urun in item if urun["stok"] < 5]
 
-def totalItemValue(Item):
-    totalvalue = 0
-    for list in Item:
-        totalvalue += list["fiyat"]*list["stok"]
 
-    return totalvalue
+def total_item_value(items):
+    total_value = 0
+    for urun in items:
+        total_value += urun["fiyat"]*urun["stok"]
+
+    return total_value
+
 
 def save(items):
-    with open("envanter.json", "w",encoding="utf-8") as file:
-        json.dump(items, file,ensure_ascii=False, indent=2)
+    with open("envanter.json", "w", encoding="utf-8") as file:
+        json.dump(items, file, ensure_ascii=False, indent=2)
+
 
 def main():
     item = load()
     while True:
-            printMenu()
-            try:
-                secim = int(input("Seçiminiz: "))
-            except ValueError:
-                print("Lütfen bir sayı girin.")
-                continue
-            match secim:
-                case 0:
-                    save(item)
-                    break
-                case 1:
-                    printItems(item)
-                case 2:
-                    addItem(item)
-                case 3:
-                    searchItem(item)
-                case 4:
-                    updateStockAndPrice(item)
-                case 5:
-                     deleteItem(item)
-                case 6:
-                    kritik = criticalStockReport(item)
-                    if kritik:
-                        printItems(kritik)
-                    else:
-                        print("Kritik stokta ürün yok.")
-                case 7:
-                    print(f"Ürünlerin toplam değeri: {totalItemValue(item):.2f}")
-                case _:
-                    print("Geçersiz seçim. Lütfen 0-7 arası bir sayı seçin.")
+        print_menu()
+        try:
+            secim = int(input("Seçiminiz: "))
+        except ValueError:
+            print("Lütfen bir sayı girin.")
+            continue
+        match secim:
+            case 0:
+                save(item)
+                break
+            case 1:
+                print_items(item)
+            case 2:
+                add_item(item)
+            case 3:
+                search_item(item)
+            case 4:
+                update_stock_and_price(item)
+            case 5:
+                delete_item(item)
+            case 6:
+                kritik = (
+                    critical_stock_report(item))
+                if kritik:
+                    print_items(kritik)
+                else:
+                    print("Kritik stokta ürün yok.")
+            case 7:
+                print(f"Ürünlerin toplam değeri: {total_item_value(item):.2f}")
+            case _:
+                print("Geçersiz seçim. Lütfen 0-7 arası bir sayı seçin.")
+
 
 if __name__ == "__main__":
     main()

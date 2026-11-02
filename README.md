@@ -28,7 +28,7 @@ Prices can be entered with either a dot or a comma (`12.5` or `12,5`).
 ```bash
 git clone https://github.com/<your-username>/PythonCLIAndStoreProject.git
 cd PythonCLIAndStoreProject
-python envanter.py
+python main.py
 ```
 
 On first run, an empty `envanter.json` file is created automatically.
