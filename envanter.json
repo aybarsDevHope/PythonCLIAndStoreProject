@@ -5,5 +5,12 @@
     "kategori": "Mal",
     "stok": 10,
     "fiyat": 20.0
+  },
+  {
+    "id": 2,
+    "ad": "Aybars",
+    "kategori": "Malcık",
+    "stok": 3,
+    "fiyat": 10
   }
 ]
