@@ -6,4 +6,7 @@ __pycache__/
 *.pyc
 
 # Bozuk dosya yedeği
-envanter_bozuk.json
+envanter.json
+
+#Database Şifre Koruması
+.env
