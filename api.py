@@ -1,15 +1,13 @@
-
+import math
 from flask import Flask, jsonify, request
-from main import load, yeni_id, save, critical_stock_report, total_item_value
+from main import load, yeni_id, save, critical_stock_report, total_item_value, tr_lower
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
 
-def urun_bul(items,urun_id):
-    for temp in items:
-        if temp["id"] == urun_id:
-            return temp
-    return None
+
+def urun_bul(items, urun_id):
+    return next((urun for urun in items if urun["id"] == urun_id), None)
 
 
 def dogrula(data, alanlar):
@@ -21,15 +19,21 @@ def dogrula(data, alanlar):
     if eksik:
         return f"Eksik alan(lar): {', '.join(eksik)}"
 
-    if "ad" in alanlar and not str(data["ad"]).strip():
-        return "ad boş olamaz"
+    if "ad" in alanlar:
+        if not isinstance(data["ad"], str) or not data["ad"].strip():
+            return "ad boş olmayan bir metin olmalı"
+
+    if "kategori" in alanlar:
+        if not isinstance(data["kategori"], str) or not data["kategori"].strip():
+            return "kategori boş olmayan bir metin olmalı"
 
     if "stok" in alanlar:
         if not isinstance(data["stok"], int) or isinstance(data["stok"], bool) or data["stok"] < 0:
             return "stok 0 veya daha büyük bir tam sayı olmalı"
 
     if "fiyat" in alanlar:
-        if not isinstance(data["fiyat"], (int, float)) or isinstance(data["fiyat"], bool) or data["fiyat"] <= 0:
+        if not isinstance(data["fiyat"], (int, float)) or isinstance(data["fiyat"], bool) or data[
+            "fiyat"] <= 0 or not math.isfinite(data["fiyat"]):
             return "fiyat 0'dan büyük bir sayı olmalı"
 
     return None
@@ -37,17 +41,25 @@ def dogrula(data, alanlar):
 
 @app.route("/urunler", methods=["GET"])
 def listele():
-    return jsonify(load())
+    liste = load()
+    aranan = request.args.get("q")
+
+    if aranan is None:
+        return jsonify(liste)
+    aranan = tr_lower(aranan)
+    bulunanlar = [urun for urun in liste if aranan in tr_lower(urun["ad"])]
+
+    return jsonify(bulunanlar)
 
 
 @app.route("/urunler/<int:urun_id>", methods=["GET"])
-def urun_getir(urun_id):
+def belirli_urun_getir(urun_id):
     liste = load()
-    temp = urun_bul(liste,urun_id)
+    temp = urun_bul(liste, urun_id)
     if temp is not None:
         return jsonify(temp)
     else:
-        return jsonify(hata = "ürün bulunamadı"), 404
+        return jsonify(hata="ürün bulunamadı"), 404
 
 
 @app.route("/urunler", methods=["POST"])
@@ -55,7 +67,7 @@ def urun_ekle():
     data = request.get_json(silent=True)
     hata = dogrula(data, ["ad", "kategori", "stok", "fiyat"])
     if hata:
-        return jsonify(hata = hata), 400
+        return jsonify(hata=hata), 400
     items = load()
     yeni_urun = {
         "id": yeni_id(items),
@@ -74,11 +86,11 @@ def urun_guncelle(urun_id):
     data = request.get_json(silent=True)
     hata = dogrula(data, ["stok", "fiyat"])
     if hata:
-        return jsonify(hata = hata), 400
+        return jsonify(hata=hata), 400
     items = load()
-    temp = urun_bul(items,urun_id)
+    temp = urun_bul(items, urun_id)
     if temp is None:
-        return jsonify(hata= f"{urun_id} numaralı ürün bulunamadı"), 404
+        return jsonify(hata=f"{urun_id} numaralı ürün bulunamadı"), 404
     temp["stok"] = data["stok"]
     temp["fiyat"] = data["fiyat"]
     save(items)
@@ -88,7 +100,7 @@ def urun_guncelle(urun_id):
 @app.route("/urunler/<int:urun_id>", methods=["DELETE"])
 def urun_sil(urun_id):
     liste = load()
-    urun = urun_bul(liste,urun_id)
+    urun = urun_bul(liste, urun_id)
     if urun is None:
         return jsonify(hata=f"{urun_id} numaralı ürün bulunamadı"), 404
     liste.remove(urun)
@@ -108,9 +120,6 @@ def total_rapor():
     toplam = total_item_value(liste)
     return jsonify(toplam=toplam, mesaj=f"Toplam envanter değeri: {toplam:.2f} TL")
 
+
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
