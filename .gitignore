@@ -10,3 +10,9 @@ envanter.json
 
 #Database Şifre Koruması
 .env
+
+# Sanal ortam
+.venv/
+
+# Bozuk dosya yedeği
+envanter_bozuk*.json
