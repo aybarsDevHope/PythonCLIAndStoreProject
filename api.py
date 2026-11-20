@@ -12,6 +12,29 @@ def urun_bul(items,urun_id):
     return None
 
 
+def dogrula(data, alanlar):
+    """Hata varsa mesajını, yoksa None döndürüyor"""
+    if not isinstance(data, dict):
+        return "Geçerli bir JSON gönderilmedi"
+
+    eksik = [alan for alan in alanlar if alan not in data]
+    if eksik:
+        return f"Eksik alan(lar): {', '.join(eksik)}"
+
+    if "ad" in alanlar and not str(data["ad"]).strip():
+        return "ad boş olamaz"
+
+    if "stok" in alanlar:
+        if not isinstance(data["stok"], int) or isinstance(data["stok"], bool) or data["stok"] < 0:
+            return "stok 0 veya daha büyük bir tam sayı olmalı"
+
+    if "fiyat" in alanlar:
+        if not isinstance(data["fiyat"], (int, float)) or isinstance(data["fiyat"], bool) or data["fiyat"] <= 0:
+            return "fiyat 0'dan büyük bir sayı olmalı"
+
+    return None
+
+
 @app.route("/urunler", methods=["GET"])
 def listele():
     return jsonify(load())
@@ -29,7 +52,10 @@ def urun_getir(urun_id):
 
 @app.route("/urunler", methods=["POST"])
 def urun_ekle():
-    data = request.json
+    data = request.get_json(silent=True)
+    hata = dogrula(data, ["ad", "kategori", "stok", "fiyat"])
+    if hata:
+        return jsonify(hata = hata), 400
     items = load()
     yeni_urun = {
         "id": yeni_id(items),
@@ -45,11 +71,14 @@ def urun_ekle():
 
 @app.route("/urunler/<int:urun_id>", methods=["PUT"])
 def urun_guncelle(urun_id):
-    data = request.json
+    data = request.get_json(silent=True)
+    hata = dogrula(data, ["stok", "fiyat"])
+    if hata:
+        return jsonify(hata = hata), 400
     items = load()
     temp = urun_bul(items,urun_id)
     if temp is None:
-        return temp
+        return jsonify(hata= f"{urun_id} numaralı ürün bulunamadı"), 404
     temp["stok"] = data["stok"]
     temp["fiyat"] = data["fiyat"]
     save(items)

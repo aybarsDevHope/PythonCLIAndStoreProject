@@ -1,0 +1,9 @@
+# PyCharm ayarları
+.idea/
+
+# Python önbelleği
+__pycache__/
+*.pyc
+
+# Bozuk dosya yedeği
+envanter_bozuk.json
