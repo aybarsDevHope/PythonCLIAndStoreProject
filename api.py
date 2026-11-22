@@ -1,6 +1,15 @@
-import math
+import math, logging
+
+
 from flask import Flask, jsonify, request
 from main import load, yeni_id, save, critical_stock_report, total_item_value, tr_lower
+from models import tablolari_olustur
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("app.log", encoding="utf-8")],
+)
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -37,7 +46,6 @@ def dogrula(data, alanlar):
             return "fiyat 0'dan büyük bir sayı olmalı"
 
     return None
-
 
 @app.route("/urunler", methods=["GET"])
 def listele():
@@ -122,4 +130,5 @@ def total_rapor():
 
 
 if __name__ == "__main__":
+    tablolari_olustur()
     app.run(debug=True)

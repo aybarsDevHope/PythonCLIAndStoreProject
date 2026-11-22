@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlmodel import Field, SQLModel, create_engine
+from sqlmodel import Field, SQLModel, create_engine, select, Session
 from decimal import Decimal
 
 
@@ -14,4 +14,7 @@ class envanter(SQLModel, table=True):
 
 
 load_dotenv()
-engine = create_engine(os.environ["DATABASE_URL"])
+engine = create_engine(os.environ["DATABASE_URL"], echo=False)
+
+def tablolari_olustur():
+    SQLModel.metadata.create_all(engine)
